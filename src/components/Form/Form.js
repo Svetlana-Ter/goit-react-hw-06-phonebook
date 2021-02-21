@@ -2,12 +2,15 @@ import React from 'react';
 import shortid from 'shortid';
 import PropTypes from 'prop-types';
 import styles from './Form.module.css';
+import { connect } from 'react-redux';
+import contactsActions from '../../redux/contacts/contacts-actions';
 
 class Form extends React.Component {
   static propTypes = {
     name: PropTypes.string,
     number: PropTypes.string,
     onSubmit: PropTypes.func,
+    messageSubmit: PropTypes.func,
   };
   state = {
     name: '',
@@ -25,10 +28,25 @@ class Form extends React.Component {
   };
 
   handleSubmit = event => {
-    const { onSubmit } = this.props;
+    const { onSubmit, contacts, messageSubmit } = this.props;
     event.preventDefault();
-    onSubmit(this.state);
-    this.reset();
+    const namesArray = contacts.map(contact => contact.name);
+    let message = '';
+    if (namesArray.includes(this.state.name)) {
+      message = `${this.state.name} is already in Phonebook.
+      Add another contact.`;
+    } else if (this.state.name === '' || this.state.number === '') {
+      message = 'Add contact, please';
+    }
+    if (message) {
+      messageSubmit(message);
+      setTimeout(() => {
+        messageSubmit('');
+      }, 3000);
+    } else {
+      onSubmit(this.state);
+      this.reset();
+    }
   };
 
   reset = () => {
@@ -68,4 +86,12 @@ class Form extends React.Component {
   }
 }
 
-export default Form;
+const mapStateToProps = state => ({
+  contacts: state.contacts.items,
+});
+
+const mapDispatchToProps = dispatch => ({
+  onSubmit: data => dispatch(contactsActions.addContact(data)),
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(Form);
